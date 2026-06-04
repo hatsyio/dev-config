@@ -5,7 +5,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# Keep $PATH entries unique so repeated prepends (pyenv shims, etc.) are no-ops.
+# Keep $PATH entries unique so repeated prepends (pnpm, pipx, etc.) are no-ops.
 typeset -U path PATH
 
 # If you come from bash you might have to change your $PATH.
@@ -81,8 +81,6 @@ zstyle ':omz:update' mode auto      # update automatically without asking
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 ZSH_AUTOSUGGEST_STRATEGY=(history)
-# Defer nvm until first use of nvm/node/npm — eager load is the biggest startup cost.
-zstyle ':omz:plugins:nvm' lazy yes
 plugins=(
   brew
   colored-man-pages
@@ -98,9 +96,6 @@ plugins=(
   history-substring-search
   kubectl
   macos
-  npm
-  nvm
-  poetry
   terraform
   z
   zsh-autosuggestions
@@ -141,13 +136,27 @@ export EDITOR='vim'
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init - zsh)"
-
 export GOOGLE_APPLICATION_CREDENTIALS="/Users/joseppascualbadia/.config/gcloud/application_default_credentials.json"
 
-# nvm is loaded (lazily) by the oh-my-zsh nvm plugin above; no manual sourcing needed.
+# User-local bin (pipx + uv-managed Python). Prepended so it precedes Homebrew
+# (set in ~/.zprofile) and uv's global python3 wins over brew's python3.
+# Originally appended by pipx on 2026-02-24; switched to prepend for uv.
+export PATH="$HOME/.local/bin:$PATH"
 
-# Created by `pipx` on 2026-02-24 14:36:01
-export PATH="$PATH:/Users/joseppascualbadia/.local/bin"
+# pnpm — installed via the standalone script (not Homebrew) so it can manage
+# Node versions (`pnpm env`); replaces nvm. See README "Fresh installation".
+export PNPM_HOME="$HOME/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
+
+# pnpm completion — oh-my-zsh has no pnpm plugin, so wire pnpm's own completion.
+# Cache it to keep startup fast; regenerate only when the cache is missing.
+_pnpm_comp="${ZSH_CACHE_DIR:-$HOME/.cache}/pnpm-completion.zsh"
+if [[ ! -s $_pnpm_comp ]] && command -v pnpm &>/dev/null; then
+  pnpm completion zsh >| "$_pnpm_comp" 2>/dev/null
+fi
+[[ -s $_pnpm_comp ]] && source "$_pnpm_comp"
+unset _pnpm_comp
