@@ -14,7 +14,7 @@ manual key upload).
 # 1. Clone the bare repo into ~/.dotfiles
 git clone --bare git@github.com:hatsyio/dotfiles.git "$HOME/.dotfiles"
 
-# 2. Define the alias (also add this line to ~/.zshrc so it persists)
+# 2. Optional per-session alias (NOT persisted — define it in the shell when needed)
 alias dotfiles='git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 
 # 3. Check out the tracked files into $HOME
@@ -26,6 +26,10 @@ dotfiles checkout
 # 4. Don't show every untracked file in $HOME as "untracked"
 dotfiles config --local status.showUntrackedFiles no
 ```
+
+The alias is a convenience only; it is intentionally **not** added to `~/.zshrc`.
+Define it per shell session as above, or use the full `git --git-dir=… --work-tree=…`
+form shown under Daily use.
 
 After this, your real `~/.zshrc` is in place. The shell "superpowers" it
 references (oh-my-zsh, powerlevel10k, plugins) still need installing — see below.
@@ -48,11 +52,14 @@ shell — the same file is safe to drop on any machine.
 
 ## Daily use
 
+No persistent alias — use the full form (or define the per-session alias from
+the bootstrap step first):
+
 ```sh
-dotfiles status
-dotfiles add ~/.zshrc
-dotfiles commit -m "feat: add z plugin"
-dotfiles push
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME status
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME add ~/.zshrc
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME commit -m "feat: add z plugin"
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME push
 ```
 
 ## Tracked files
