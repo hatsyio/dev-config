@@ -129,11 +129,7 @@ duplicated in each by design:
 - `zhuangtongfa.material-theme` — "One Dark Pro" color theme.
 - `vscode-icons-team.vscode-icons` — file/folder icon theme.
 - `ms-ceintl.vscode-language-pack-es` — Spanish (Español) UI localization.
-
-### Default profile — extras
-
-On top of the baseline:
-
+- `sst-dev.opencode` — opencode for VS Code: launch and manage AI coding agent sessions from the editor.
 - `anthropic.claude-code` — Claude Code agent inside VS Code: run and manage agentic coding sessions.
 - `ms-kubernetes-tools.vscode-kubernetes-tools` — browse clusters, manage workloads, edit/apply manifests, Helm.
 - `mechatroner.rainbow-csv` — colorizes CSV/TSV columns and runs SQL-like queries over them.
