@@ -1,37 +1,32 @@
 # dev-config
 
-Personal development config — shell setup and AI coding-agent rules — tracked
-with a **bare git repo** whose work-tree is `$HOME`. The tracked files (e.g.
-`~/.zshrc`, `~/AGENTS.md`) stay as real files in their normal location — no
-symlinks, no special filenames. The repo is invisible day-to-day; you only
-touch it to save or pull changes.
+Personal development config — shell setup and AI coding-agent rules. Public on
+purpose: grab whole files or just the bits you want.
 
-## New machine bootstrap
+## Quick start on a new machine
 
-Prerequisites: `git`, and an SSH key registered with GitHub (`gh auth login` or
-manual key upload).
+Pull the files you want straight from raw GitHub — take all of them, or
+cherry-pick:
 
 ```sh
-# 1. Clone the bare repo into ~/.dotfiles
-git clone --bare git@github.com:hatsyio/dev-config.git "$HOME/.dotfiles"
+# zsh config
+curl -fsSL https://raw.githubusercontent.com/hatsyio/dev-config/main/.zshrc -o ~/.zshrc
 
-# 2. Check out the tracked files into $HOME
-#    If this fails because a file (e.g. ~/.zshrc) already exists, back it up first:
-#       mkdir -p ~/.dotfiles-backup
-#       git --git-dir=$HOME/.dotfiles --work-tree=$HOME checkout 2>&1 \
-#         | egrep '\s+\.' | awk '{print $1}' | xargs -I{} mv {} ~/.dotfiles-backup/{}
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME checkout
-
-# 3. Don't show every untracked file in $HOME as "untracked"
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME config --local status.showUntrackedFiles no
+# AI coding-agent rules
+curl -fsSL https://raw.githubusercontent.com/hatsyio/dev-config/main/AGENTS.md -o ~/AGENTS.md
 ```
 
-After this, your real `~/.zshrc` is in place. The shell "superpowers" it
-references (oh-my-zsh, powerlevel10k, plugins) still need installing — see below.
+Or open the raw files in a browser and copy only the parts you care about:
+
+- <https://raw.githubusercontent.com/hatsyio/dev-config/main/.zshrc>
+- <https://raw.githubusercontent.com/hatsyio/dev-config/main/AGENTS.md>
+
+> Heads-up: `.zshrc` contains a few machine-specific paths (e.g. the gcloud
+> credentials path under `$HOME`). After copying, adjust those to your machine.
 
 ## Shell superpowers — what `.zshrc` depends on
 
-The `.zshrc` only *references* these; install them once per machine:
+`.zshrc` only *references* these; install them once per machine:
 
 ```sh
 # oh-my-zsh
@@ -41,11 +36,21 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 brew install powerlevel10k zsh-autosuggestions zsh-syntax-highlighting
 ```
 
-Everything-as-code note: the `.zshrc` guards all optional integrations
-(`[ -f … ] && source …`, `command -v … && …`) so a missing tool never breaks the
-shell — the same file is safe to drop on any machine.
+The config guards every optional integration (`[ -f … ] && source …`,
+`command -v … && …`), so a missing tool never breaks the shell — the same file
+is safe to drop on any machine.
 
-## Daily use
+## Files
+
+- `.zshrc` — zsh + oh-my-zsh + powerlevel10k config
+- `AGENTS.md` — project-agnostic engineering rules for AI coding agents
+- `README.md` — this file
+
+## How this repo is maintained
+
+The files live at `$HOME` and are tracked with a **bare git repo** at
+`~/.dotfiles` whose work-tree is `$HOME` — so they stay real files in place, no
+symlinks. Day-to-day, the repo is invisible; drive it with the full git form:
 
 ```sh
 git --git-dir=$HOME/.dotfiles --work-tree=$HOME status
@@ -54,8 +59,11 @@ git --git-dir=$HOME/.dotfiles --work-tree=$HOME commit -m "feat: add z plugin"
 git --git-dir=$HOME/.dotfiles --work-tree=$HOME push
 ```
 
-## Tracked files
+To re-create that maintenance setup on a new machine (rather than just copying
+files), clone the repo bare and check it out into `$HOME`:
 
-- `~/.zshrc` — zsh + oh-my-zsh + powerlevel10k config
-- `~/AGENTS.md` — project-agnostic engineering rules for AI coding agents
-- `~/README.md` — this file
+```sh
+git clone --bare git@github.com:hatsyio/dev-config.git "$HOME/.dotfiles"
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME checkout
+git --git-dir=$HOME/.dotfiles --work-tree=$HOME config --local status.showUntrackedFiles no
+```
