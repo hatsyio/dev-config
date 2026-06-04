@@ -208,22 +208,33 @@ What each one does, grouped by purpose:
 
 ## How this repo is maintained
 
-The files live at `$HOME` and are tracked with a **bare git repo** at
-`~/.dotfiles` whose work-tree is `$HOME` — so they stay real files in place, no
-symlinks. Day-to-day, the repo is invisible; drive it with the full git form:
+This is an ordinary git repo — clone it anywhere and edit the files there.
+`$HOME` is **not** a git work-tree; tracked files are *copied* to wherever each
+tool reads them. That keeps repo artifacts (this README, `vscode-profiles/`,
+`zsh-plugins.txt`, `.markdownlint.json`) out of `$HOME`, while only the real
+dotfiles land where they belong.
 
 ```sh
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME status
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME add ~/.zshrc
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME commit -m "feat: add z plugin"
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME push
+# clone once (anywhere — e.g. a workspace dir)
+git clone git@github.com:hatsyio/dev-config.git ~/Workspace/dev-config
+cd ~/Workspace/dev-config
 ```
 
-To re-create that maintenance setup on a new machine (rather than just copying
-files), clone the repo bare and check it out into `$HOME`:
+Edit and commit normally:
 
 ```sh
-git clone --bare git@github.com:hatsyio/dev-config.git "$HOME/.dotfiles"
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME checkout
-git --git-dir=$HOME/.dotfiles --work-tree=$HOME config --local status.showUntrackedFiles no
+# edit .zshrc / AGENTS.md / …
+git add -A && git commit -m "feat: add z plugin" && git push
 ```
+
+Apply changes to the machine by copying each file to its destination. Only the
+files a tool actually reads from `$HOME` get copied there — currently `~/.zshrc`
+and `~/AGENTS.md`:
+
+```sh
+cp ~/Workspace/dev-config/.zshrc    ~/.zshrc && exec zsh   # reload the shell
+cp ~/Workspace/dev-config/AGENTS.md ~/AGENTS.md
+# VS Code profiles: Cmd+Shift+P → "Profiles: Import Profile…" → pick the file
+```
+
+Everything else stays in the clone — there is no checkout into `$HOME`.
