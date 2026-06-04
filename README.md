@@ -1,8 +1,9 @@
-# dotfiles
+# dev-config
 
-Personal dotfiles, tracked with a **bare git repo** whose work-tree is `$HOME`.
-The tracked files (e.g. `~/.zshrc`) stay as real files in their normal location —
-no symlinks, no special filenames. The repo is invisible day-to-day; you only
+Personal development config — shell setup and AI coding-agent rules — tracked
+with a **bare git repo** whose work-tree is `$HOME`. The tracked files (e.g.
+`~/.zshrc`, `~/AGENTS.md`) stay as real files in their normal location — no
+symlinks, no special filenames. The repo is invisible day-to-day; you only
 touch it to save or pull changes.
 
 ## New machine bootstrap
@@ -12,7 +13,7 @@ manual key upload).
 
 ```sh
 # 1. Clone the bare repo into ~/.dotfiles
-git clone --bare git@github.com:hatsyio/dotfiles.git "$HOME/.dotfiles"
+git clone --bare git@github.com:hatsyio/dev-config.git "$HOME/.dotfiles"
 
 # 2. Check out the tracked files into $HOME
 #    If this fails because a file (e.g. ~/.zshrc) already exists, back it up first:
