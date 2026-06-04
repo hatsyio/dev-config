@@ -56,4 +56,5 @@ git --git-dir=$HOME/.dotfiles --work-tree=$HOME push
 ## Tracked files
 
 - `~/.zshrc` — zsh + oh-my-zsh + powerlevel10k config
+- `~/AGENTS.md` — project-agnostic engineering rules for AI coding agents
 - `~/README.md` — this file
