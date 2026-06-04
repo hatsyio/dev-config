@@ -85,6 +85,8 @@ plugins=(
   brew
   colored-man-pages
   command-not-found
+  copyfile
+  copypath
   direnv
   docker
   extract
@@ -135,6 +137,14 @@ export EDITOR='vim'
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# opencode
+export PATH=/Users/joseppascualbadia/.opencode/bin:$PATH
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/joseppascualbadia/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions
 
 export GOOGLE_APPLICATION_CREDENTIALS="/Users/joseppascualbadia/.config/gcloud/application_default_credentials.json"
 
