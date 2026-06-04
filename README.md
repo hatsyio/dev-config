@@ -24,21 +24,40 @@ Or open the raw files in a browser and copy only the parts you care about:
 > Heads-up: `.zshrc` contains a few machine-specific paths (e.g. the gcloud
 > credentials path under `$HOME`). After copying, adjust those to your machine.
 
-## Shell superpowers — what `.zshrc` depends on
+## Fresh installation
 
-`.zshrc` only *references* these; install them once per machine:
+On a brand-new machine, install these once — in order. The `.zshrc` expects
+powerlevel10k and the two plugins to live in oh-my-zsh's `custom` dir (it loads
+them by name), so they are git-cloned there, not installed via brew.
 
 ```sh
-# oh-my-zsh
+# 1. Homebrew (package manager — install first)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. zsh (ships with modern macOS; install to be sure, then set as default shell)
+brew install zsh
+chsh -s "$(which zsh)"
+
+# 3. oh-my-zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-# External theme + plugins (Homebrew)
-brew install powerlevel10k zsh-autosuggestions zsh-syntax-highlighting
+# 4. powerlevel10k theme (into oh-my-zsh custom themes)
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+  "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+
+# 5. zsh plugins (into oh-my-zsh custom plugins)
+git clone https://github.com/zsh-users/zsh-autosuggestions \
+  "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+  "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+
+# 6. VS Code
+brew install --cask visual-studio-code
 ```
 
-The config guards every optional integration (`[ -f … ] && source …`,
-`command -v … && …`), so a missing tool never breaks the shell — the same file
-is safe to drop on any machine.
+The `.zshrc` guards every optional integration (`[ -f … ] && source …`,
+`command -v … && …`), so anything not installed simply no-ops — the same file is
+safe to drop on any machine.
 
 ## Files
 
