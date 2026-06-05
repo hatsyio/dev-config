@@ -76,34 +76,49 @@ safe to drop on any machine.
 
 - `.zshrc` — zsh + oh-my-zsh + powerlevel10k config
 - `AGENTS.md` — project-agnostic engineering rules for AI coding agents
-- `vscode-profiles/` — exported VS Code profiles: Default, Python, Node.js (see [VS Code profiles](#vs-code-profiles))
+- `profiles/` — VS Code extension lists per profile (see [VS Code profiles](#vs-code-profiles))
 - `zsh-plugins.txt` — inventory of the oh-my-zsh plugins enabled in `.zshrc` (see [oh-my-zsh plugins](#oh-my-zsh-plugins))
 - `README.md` — this file
 
 ## VS Code profiles
 
-The editor is tracked as three exported VS Code **profiles** under
-`vscode-profiles/` — each a self-contained bundle of extensions, settings, and
-keybindings. Profiles are the source of truth for the editor; there is no flat
-extension list.
+Extensions are tracked as `recommendations.json` files inside each profile
+subdirectory, using the same format as VS Code's workspace
+`.vscode/extensions.json`. This replaces the old `.code-profile` bundles, which
+were brittle to import.
 
 | Profile | File | Purpose |
 | --- | --- | --- |
-| Default | `vscode-profiles/Default.code-profile` | General / infra / ops — DevOps, IaC, containers, Kubernetes, docs |
-| Python | `vscode-profiles/Python.code-profile` | Python development (ruff + uv) |
-| Node.js | `vscode-profiles/Node.js.code-profile` | JavaScript / TypeScript development (pnpm) |
+| Default | `profiles/default/.vscode/recommendations.json` | General / infra / ops — DevOps, IaC, containers, Kubernetes, docs |
+| Python | `profiles/python/.vscode/recommendations.json` | Python development (ruff + uv) |
+| Node.js | `profiles/node/.vscode/recommendations.json` | JavaScript / TypeScript development (pnpm) |
 
-### Importing a profile
+### Setting up a profile
 
-In VS Code: **Cmd+Shift+P → `Profiles: Import Profile...`**, then select the
-`.code-profile` file (or paste its raw GitHub URL). VS Code recreates the
-profile with its extensions and settings; switch to it from the gear menu
-(bottom-left) → **Profiles**.
+VS Code doesn't install extensions from a `recommendations.json` automatically
+outside a workspace. The recommended way is to pipe the list into the CLI:
+
+```sh
+# Install all extensions for a profile
+jq -r '.recommendations[]' profiles/default/.vscode/recommendations.json |
+  xargs -n1 code --install-extension
+
+# Or for Python
+jq -r '.recommendations[]' profiles/python/.vscode/recommendations.json |
+  xargs -n1 code --install-extension
+
+# Or for Node.js
+jq -r '.recommendations[]' profiles/node/.vscode/recommendations.json |
+  xargs -n1 code --install-extension
+```
+
+To create a VS Code profile from scratch, create an **Empty Profile** via
+**Cmd+Shift+P → `Profiles: Create Profile...` → Empty Profile**, then install
+the extensions for that profile using the command above.
 
 ### Shared baseline
 
-Every profile carries this common set — VS Code profiles don't inherit, so it is
-duplicated in each by design:
+Every profile carries this common set:
 
 - `eamodio.gitlens` — supercharges Git: inline blame, history, authorship, and repo insights.
 - `github.vscode-github-actions` — author, run, and monitor GitHub Actions workflows from the editor.

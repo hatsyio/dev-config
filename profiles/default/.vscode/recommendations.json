@@ -1,0 +1,32 @@
+{
+  "recommendations": [
+    "aaron-bond.better-comments",
+    "anthropic.claude-code",
+    "christian-kohler.path-intellisense",
+    "davidanson.vscode-markdownlint",
+    "docker.docker",
+    "eamodio.gitlens",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions",
+    "hashicorp.terraform",
+    "hediet.vscode-drawio",
+    "mechatroner.rainbow-csv",
+    "mikestead.dotenv",
+    "ms-azuretools.vscode-containers",
+    "ms-ceintl.vscode-language-pack-es",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+    "ms-vscode-remote.remote-containers",
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-ssh-edit",
+    "ms-vscode.remote-explorer",
+    "ms-vscode.remote-server",
+    "redhat.vscode-yaml",
+    "sonarsource.sonarlint-vscode",
+    "sst-dev.opencode",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    "vscode-icons-team.vscode-icons",
+    "yzhang.markdown-all-in-one",
+    "zhuangtongfa.material-theme"
+  ]
+}
