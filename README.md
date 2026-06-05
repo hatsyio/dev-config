@@ -82,33 +82,33 @@ safe to drop on any machine.
 
 ## VS Code profiles
 
-Extensions are tracked as `recommendations.json` files inside each profile
+Extensions are tracked as `extensions.json` files inside each profile
 subdirectory, using the same format as VS Code's workspace
 `.vscode/extensions.json`. This replaces the old `.code-profile` bundles, which
 were brittle to import.
 
 | Profile | File | Purpose |
 | --- | --- | --- |
-| Default | `profiles/default/.vscode/recommendations.json` | General / infra / ops — DevOps, IaC, containers, Kubernetes, docs |
-| Python | `profiles/python/.vscode/recommendations.json` | Python development (ruff + uv) |
-| Node.js | `profiles/node/.vscode/recommendations.json` | JavaScript / TypeScript development (pnpm) |
+| Default | `profiles/default/.vscode/extensions.json` | General / infra / ops — DevOps, IaC, containers, Kubernetes, docs |
+| Python | `profiles/python/.vscode/extensions.json` | Python development (ruff + uv) |
+| Node.js | `profiles/node/.vscode/extensions.json` | JavaScript / TypeScript development (pnpm) |
 
 ### Setting up a profile
 
-VS Code doesn't install extensions from a `recommendations.json` automatically
+VS Code doesn't install extensions from a `extensions.json` automatically
 outside a workspace. The recommended way is to pipe the list into the CLI:
 
 ```sh
 # Install all extensions for a profile
-jq -r '.recommendations[]' profiles/default/.vscode/recommendations.json |
+jq -r '.recommendations[]' profiles/default/.vscode/extensions.json |
   xargs -n1 code --install-extension
 
 # Or for Python
-jq -r '.recommendations[]' profiles/python/.vscode/recommendations.json |
+jq -r '.recommendations[]' profiles/python/.vscode/extensions.json |
   xargs -n1 code --install-extension
 
 # Or for Node.js
-jq -r '.recommendations[]' profiles/node/.vscode/recommendations.json |
+jq -r '.recommendations[]' profiles/node/.vscode/extensions.json |
   xargs -n1 code --install-extension
 ```
 
