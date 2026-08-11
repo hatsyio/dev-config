@@ -267,6 +267,35 @@ vulnerability would ship silently. Parameterized query fixes it without
 performance cost.
 ```
 
+## Writing style — ASD-STE100 Simplified Technical English
+
+All agent output — chat responses, documentation, PR summaries, commit bodies,
+review findings — follows ASD-STE100 STE rules:
+
+- **Active voice only.** Write "the function returns X", never "X is returned".
+- **Sentence length:** max 20 words in procedures/instructions, max 25 words in
+  descriptions. One instruction per sentence.
+- **One word, one meaning.** Pick one term per concept and keep it through the
+  whole text. No synonyms for variety ("directory" everywhere, not
+  directory/folder mixed).
+- **Verbs:** simple tenses only (present, past, future). No gerund-led clauses,
+  no "-ing" verb forms where a simple form works. No modal stacking
+  ("could possibly").
+- **Imperative for instructions:** "Run the tests", not "You should run" or
+  "The tests should be run".
+- **Noun clusters:** max 3 nouns in a row. Break longer chains with prepositions
+  ("the config of the deploy pipeline", not "deploy pipeline config file value").
+- **Articles:** do not drop "a/an/the" for brevity.
+- **Paragraphs:** one topic each, max 6 sentences. Start with the key sentence.
+- **Warnings/cautions first:** state a risk before the instruction it applies to.
+- **Technical names and technical verbs are exempt** from the approved-word
+  restriction: API names, commands, file paths, library/domain terms stay as-is.
+
+**Carve-outs (STE does not apply):** code itself, code comments, quoted output,
+commit subjects (Conventional Commits format wins), and text whose format another
+rule or tool mandates. When a project's own style guide conflicts, the project wins
+(per the layering rule at the top of this file).
+
 ## Communication style
 
 - **Medium verbosity.** Short status updates while working. Brief explanations only for non-obvious choices or tradeoffs. No recaps of what you just did — the diff speaks for itself.
