@@ -160,3 +160,6 @@ if [[ ! -s $_pnpm_comp ]] && command -v pnpm &>/dev/null; then
 fi
 [[ -s $_pnpm_comp ]] && source "$_pnpm_comp"
 unset _pnpm_comp
+
+# dev-config — bare repo tracking $HOME (github.com/hatsyio/dev-config)
+alias devcfg='git --git-dir=$HOME/.dev-config --work-tree=$HOME'
