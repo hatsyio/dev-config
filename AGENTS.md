@@ -65,7 +65,7 @@ Every non-trivial task follows this sequence. The individual rules stay in their
 - **Task runners:** `Makefile` / `justfile` / `Taskfile` / `package.json` scripts over README-style "run command A, then B, then C." If a sequence is worth documenting, it's worth committing.
 
 **Reproducibility & determinism** (applies wherever it makes sense — Dockerfiles, CI configs, build scripts, dev environments, IaC):
-- **Pin versions; commit lockfiles.** No `latest` tags in base images, GitHub Actions / GitLab CI components, pip / npm / cargo packages, etc.
+- **Pin versions; commit lockfiles.** No `latest` tags in base images, GitHub Actions / GitLab CI components, pip / npm / cargo packages, etc. For GitHub Actions, a floating major tag is the accepted pin (`actions/checkout@v4`) — SHA pinning is not required and its absence is not a finding.
 - **Hermetic build environments.** Containers or equivalent. Don't rely on the developer's `$PATH`, globally installed tools, or system packages outside the container.
 - **Reproducible from a clean clone, with one command** — `docker compose up`, `make ci`, `just dev`, etc. The workflow must be invokable from a fresh checkout with no extra setup.
 - **Same input → same output, every time, everywhere.** This is the security property: it's how we know what's actually running where.
