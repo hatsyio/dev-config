@@ -11,10 +11,10 @@ Brief the user on an unfamiliar PR **before** any findings appear, run the team 
 
 ## Stage 1 — Resolve and checkout
 
-1. Check that the `carto-ps-core-team:carto-ps-pr-review` skill is available in this session. If it is not, tell the user immediately and ask whether to proceed briefing-only (stages 1–2) or stop.
+1. Check that the `carto-ps-core-team:carto-ps-pr-review` skill is available in this session. If it is not listed but its SKILL.md exists on disk (plugin cache/marketplace, possibly a newer version than the session loaded), read that file and follow it — that is the real pipeline, not improvisation. Only when no pipeline definition is readable: tell the user immediately and ask whether to proceed briefing-only (stages 1–2) or stop.
 2. Parse owner/repo/number from the PR URL. `gh pr view <n> -R <owner>/<repo> --json author,title,body,baseRefName,headRefName,commits,files,url` (`-R` works without a clone), plus linked issues/Shortcut tickets referenced in the body or branch name. Enforce the routing the description promises: if the author is the user (`gh api user`), hand off to `carto-ps-pr-review` directly; if the author is `dependabot[bot]`, hand off to `carto-ps-dependabot-review`. The briefing is for colleagues' work.
 3. Find the local clone. Check the cwd first; otherwise `find ~ -maxdepth 3 -type d -name <repo> -not -path '*/.*/*' 2>/dev/null`. A name match is not a clone match: verify with `git remote -v` that the candidate references `<owner>/<repo>` — a fork or stale copy silently poisons everything downstream. Multiple verified matches → ask which. None → STOP and ask the user where it lives (or whether to clone it, and where to) — never guess a path.
-4. In the clone: pre-flight `git status` and record the current branch (on detached HEAD, record the SHA). Stop and surface uncommitted changes before `gh pr checkout <n>`. Then `git fetch origin <baseRefName>` — a full fetch, never `--depth`: a depth-limited fetch leaves the clone shallow and can silently compute a wrong merge-base — and set `$BASE=origin/<baseRefName>`; stage 3 declares target resolution satisfied, so it must actually be true here. After the whole flow ends (posted or not), return to the recorded branch; the checkout's local PR branch may stay, mention it in the recap.
+4. In the clone: pre-flight `git status` and record the current branch (on detached HEAD, record the SHA). Stop and surface uncommitted changes before `gh pr checkout <n>`. If checkout fails because the PR branch is already checked out in another worktree ("is already used by worktree at <path>"), use THAT worktree as the review checkout instead: verify its `git rev-parse HEAD` equals the PR's `headRefOid` (update it if stale), leave the main clone untouched, and skip any stash it no longer needs. Then `git fetch origin <baseRefName>` — a full fetch, never `--depth`: a depth-limited fetch leaves the clone shallow and can silently compute a wrong merge-base — and set `$BASE=origin/<baseRefName>`; stage 3 declares target resolution satisfied, so it must actually be true here. After the whole flow ends (posted or not), return to the recorded branch; the checkout's local PR branch may stay, mention it in the recap.
 
 ## Stage 2 — Deep-dive briefing (before any findings)
 
@@ -69,6 +69,7 @@ Print the recap in three parts: findings to post inline (with final wording), re
 - **Briefing before findings, always.** Orientation loses its value once judgment has been rendered.
 - **Do not duplicate the team pipeline.** If `carto-ps-pr-review` is unavailable, stop and tell the user — do not improvise a replacement review.
 - **Report faithfully.** If a stage failed or was skipped, say so in the recap.
+- **When the user asks you to apply fixes to the PR branch instead of posting:** stage files explicitly by path — never `git add -A`/`git add .` (tooling side-artifacts like stray lockfiles get swept into the PR silently). Diff-stat the commit against the intended file list before pushing.
 
 ## Common mistakes
 
