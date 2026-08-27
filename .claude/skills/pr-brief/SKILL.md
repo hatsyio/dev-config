@@ -2,10 +2,9 @@
 name: pr-brief
 description: Use when the user asks to be briefed on, understand, or review a colleague's GitHub PR — especially code areas the user has not touched — or pastes a PR URL asking "what's going on here / why is this done this way". A bare pasted PR URL also triggers this skill (stage 1 routes the user's own and Dependabot PRs away). Not for Dependabot PRs (use carto-ps-dependabot-review) and not for the user's own branches, working tree, or own PRs (use carto-ps-pr-review directly).
 ---
+# PR Brief — orient, review, escalate, decide on paper
 
-# PR Brief — orient, review, escalate, triage
-
-Brief the user on an unfamiliar PR **before** any findings appear, run the team review pipeline, escalate each finding to its long-term fix, then step through findings one at a time in the terminal. Nothing reaches GitHub before the single final confirmation in stage 6.
+Brief the user on an unfamiliar PR **before** any findings appear, run the team review pipeline, escalate each finding to its long-term fix, then hand the user **one report file** where they read, edit, and decide. Nothing reaches GitHub before the single final confirmation in stage 6.
 
 **REQUIRED SUB-SKILL:** `carto-ps-core-team:carto-ps-pr-review` (stage 3). This skill never re-implements that pipeline.
 
@@ -19,20 +18,76 @@ Brief the user on an unfamiliar PR **before** any findings appear, run the team 
    - Then `git fetch origin <baseRefName>` — a full fetch, never `--depth` (a depth-limited fetch leaves the clone shallow and can silently compute a wrong merge-base) — and set `$BASE=origin/<baseRefName>`. Stage 3 declares target resolution satisfied; this step makes that true.
    - After the whole flow ends (posted or not), return to the recorded branch. The local PR branch may stay; mention it in the recap.
 
+## The report file
+
+Every run produces exactly one Markdown file: `~/pr-briefs/<owner>-<repo>-pr<n>.md` (`mkdir -p ~/pr-briefs`). It lives outside the repo, survives the session, and is the **single source of truth** for what posts and with which wording. Stage 2 writes §1–§2; stage 5 writes §3–§4; stage 6 reads the file back and appends §6.
+
+If the file already exists (re-review), first copy each old finding/gap one-liner with its `Decision:` into `## 5. Previous rounds`, then overwrite the rest.
+
+Skeleton — keep the headings and field names exactly; stage 6 parses `Decision:` lines and ```comment fences:
+
+```markdown
+# PR <n> — <title>
+<owner>/<repo> · @<author> · <base> ← <head> · <url> · round <k> · <date>
+
+## 1. What and why
+### What it changes
+<grouped by concern, not by file>
+### Why
+<stated intent (ticket, description) + evidence from history/discussion; mark inference as inference>
+### Where to look
+<2–4 spots that deserve attention and why>
+
+## 2. How it fits the codebase
+| File | Change | Where it sits | Fits? |
+|---|---|---|---|
+| path | added / modified / deleted / moved from `old` | module role, layer, who depends on it | OK, or `flag: <why>` |
+<prose: where the touched subsystems sit in the architecture; every `flag` explained>
+
+## 3. Findings
+### F1 · [blocker] · `path:line` — <one-liner>
+- What the code does: …
+- What breaks: …
+- Why this severity: …
+- Systemic: G1 | none
+- Restraint: none | addressed-as-agreed | third-call-site
+- Recommendation: post | post+systemic | drop
+```comment
+<draft comment, verbatim as it would post>
+```
+```suggestion
+<pipeline suggestion block, if any>
+```
+Decision: post
+
+## 4. Systemic gaps
+### G1 · <name> · size: small | large · from F1, F4
+- What recurs: …
+- Mechanism: <exact rule / config / shape change and where it plugs in>
+- Recommendation: in-pr | ticket
+```comment
+<in-pr ask wording, or ticket title + body>
+```
+Decision: in-pr
+
+## 5. Previous rounds
+<re-review only: F/G one-liners + decisions from the earlier file>
+
+## 6. Posted
+<stage 6 appends: date, review URL, what posted, what was dropped and why>
+```
+
+`Decision:` is prefilled with the recommendation so an unedited file means "I agree". Restraint findings are prefilled `drop`. Allowed values — findings: `post`, `post+systemic`, `drop`, `discuss`; gaps: `in-pr`, `ticket`, `drop`, `discuss`. The user may also rewrite the text inside any ```comment fence; that text posts verbatim. A ```suggestion fence survives unless deleted.
+
 ## Stage 2 — Deep-dive briefing (before any findings)
 
 Fan out parallel Explore agents in a single message — one **Surroundings** agent per touched area (an area = the team skill's reviewer routing buckets: frontend / api / functions / db-data, falling back to top-level directory; cap at 4, merge small areas) plus one **History** agent:
-- **Surroundings** — for each touched area, read the modules around the changed files (callers, the subsystem's entry points, its README section) so the briefing explains the code as it exists, not just the diff.
+- **Surroundings** — for each touched area, read the modules around the changed files (callers, the subsystem's entry points, its README section) so the briefing explains the code as it exists, not just the diff. Also report, per touched file, its role and whether its location follows the repo's structure and naming (sibling modules, existing layers, where similar files already live).
 - **History** — `git log` of the touched files, recent merged PRs on the same paths (`gh pr list --search`), the linked ticket content, and the PR's own discussion so far.
 
-Synthesize and print the briefing in chat, written for a reviewer who has never touched this code:
+Synthesize into **§1 What and why** and **§2 How it fits the codebase** of the report file, written for a reviewer who has never touched this code. §2 lists every file from `gh pr view --json files` (added / modified / deleted / moved — detect moves with `git diff --stat -M $BASE...HEAD`) and answers, per file, whether it makes sense where it is. `flag:` when a file lands in the wrong layer, duplicates an existing module, breaks a naming convention, leaves callers orphaned after a delete/move, or when a move loses history without reason. A `flag` in §2 is orientation, not a finding; stage 4 may promote a repeated one to a gap.
 
-1. **What it changes** — grouped by concern, not by file.
-2. **Why** — the stated intent (ticket, description) and the evidence in history/discussion. Mark inference as inference.
-3. **How it fits** — where the touched subsystems sit in the architecture, what depends on them.
-4. **Where to look** — the 2–4 spots that deserve the reviewer's attention and why.
-
-Do not mention findings yet. The briefing is orientation, not judgment.
+Do not write findings yet. Print one line in chat: the file path and "briefing written, running findings".
 
 ## Stage 3 — Findings via the team pipeline
 
@@ -74,45 +129,60 @@ All of these mean: **the concern is settled. Suppress it as a restraint note unl
 For each verified defect finding, ask: **what prevents this class of issue from recurring?** Attach a `systemic_fix` when one exists. Two kinds:
 
 - **Tooling** — a lint rule, formatter, type-checker, pre-commit hook, CI stage, or scanner would have caught it. First read the repo's actual config (`ruff`/`eslint` config, `.pre-commit-config.yaml`, CI workflows): it is only a gap if the rule is absent or disabled. Name the exact mechanism and placement (e.g. import inside a function → ruff `PLC0415` in pre-commit + CI lint stage). A tooling suggestion without a named rule is noise — drop it.
-- **Design** — the recurrence guard is a shape change: extract an abstraction over duplicated code, move validation to the I/O boundary, encode the invariant in a type. Apply the user's DRY judgment: literal repetition → the systemic fix is "extract now"; similar-but-conceptually-distinct shapes → NOT a systemic fix — show a restraint note during step-through ("looks duplicated, but distinct domains; wait for the third call site") that is never offered for posting.
+- **Design** — the recurrence guard is a shape change: extract an abstraction over duplicated code, move validation to the I/O boundary, encode the invariant in a type. Apply the user's DRY judgment: literal repetition → the systemic fix is "extract now"; similar-but-conceptually-distinct shapes → NOT a systemic fix — emit a restraint finding in the report ("looks duplicated, but distinct domains; wait for the third call site") that is never offered for posting.
 
 Dedup systemic fixes across findings into **repo-level gaps** (five inline-import findings → one "enable PLC0415" gap). Keep the finding↔gap links. A gap survives even if every finding linked to it is later dropped — it is a repo-level observation; note the drops when triaging it.
 
 On a re-review, a systemic pattern surfaced by a suppressed re-open (stage 3.5) attaches **only** as a repo-level gap → follow-up ticket. It never becomes a repeated change-request comment on the colleague's PR.
 
-For each finding with a systemic fix, draft the "longer term: …" sentence now, so the user sees the exact posted wording during step-through.
+**Size every gap** — the size decides the recommendation, and the default is NOT "file a ticket":
 
-## Stage 5 — Step-through triage
+- **small** — enabling an existing rule, one config line, one pre-commit hook or CI step, a version pin, or a ≤20-line code change inside files the PR already touches, with no design decision and no behavior change for consumers. Recommendation `in-pr`: draft a review-body paragraph asking the author to include it in this PR, with the exact change spelled out (rule id, file, placement).
+- **large** — touches files outside the PR, introduces an abstraction or module, needs a migration, its own tests, or a design choice. Recommendation `ticket`: draft the ticket (title; body = problem, evidence findings, proposed fix, scope). Never ask the colleague to grow this PR with it.
+- Tie-break: if the author can do it in under 30 minutes with no new decision, it is small.
 
-First print a one-screen overview: the risk header + a numbered list (severity tag + one-liner per finding). Map whatever severity scale the pipeline emits onto the user's tag set by meaning, not by label: must-fix-before-merge → `[blocker]`, important-but-not-blocking → `[should fix]`, cosmetic → `[nit]`, no-opinion-asking → `[question]`, genuinely-noteworthy-positive → `[praise]`.
+Exception: a gap that exists only because of a stage 3.5 suppressed re-open is always `ticket`, whatever its size.
 
-Findings marked as restraint notes — stage 3.5 `addressed-as-agreed`, or a stage 4 third-call-site note — appear in step-through flagged as such and **default to drop**: present the reasoning, take the user's call, but never place them in the auto-post set. If the user overrides to post an `addressed-as-agreed` note that is not a blocker, confirm the override explicitly, because it re-opens a settled concern with the colleague.
+For each finding with a systemic fix, draft the "longer term: …" sentence now, so the user sees the exact posted wording in the report.
 
-Then present **one finding at a time**, as a plain-text briefing that ENDS the turn (verified live: text sharing a turn with an AskUserQuestion call often never renders — the briefing must be the last thing in the turn, the question comes only after the user replies):
-- **What the code does** (with the real code context around `file:line`, read from the checkout), **what breaks** (concrete failure mode), **why this severity**, the **draft comment** verbatim, and **your recommendation**.
-- Close with the decision line, matched to the finding. Without a systemic fix: "Reply post / drop / discuss — or 'go' for the widget." With one: "Reply post / post+systemic / drop / discuss — or 'go'." A bare "post" on a systemic-fix finding means point-fix-only (the literal reading) — state your recommendation so the user rarely needs the distinction. Use numbered options for multi-way decisions.
+## Stage 5 — Report and decisions
 
-Take the decision from the user's text reply. Send an AskUserQuestion widget only when the user asks ("go") — and then keep the question to a one-line gist (the briefing was already read; a long question is unusable in the dialog), with at most 4 named options (the tool's hard limit): **Post** / **Post with systemic suggestion** (only when the finding has a systemic fix; the comment gains the drafted "longer term: …" sentence) / **Drop** / **Discuss**. A reworded comment comes as user text (or the widget's Other) and replaces the comment prose in full; the finding's `suggestion` block survives unless the user says to drop it. Exception: if the typed text reads as an instruction to you ("make it softer", "drop this and the next two") rather than comment prose, treat it as Discuss — act on the instruction and confirm the resulting wording; never post instruction text verbatim. On Discuss, the discussion content also ends its turn as plain text (same rendering constraint) — talk it through with the stage-2 context available, then re-offer the decision.
+Write **§3 Findings** and **§4 Systemic gaps** into the report file. Map whatever severity scale the pipeline emits onto the user's tag set by meaning, not by label: must-fix-before-merge → `[blocker]`, important-but-not-blocking → `[should fix]`, cosmetic → `[nit]`, no-opinion-asking → `[question]`, genuinely-noteworthy-positive → `[praise]`. Order findings by severity, then by file. Each finding carries the real code context around `file:line`, read from the checkout — not the pipeline's paraphrase.
 
-After the last finding, triage the **repo-level gaps** the same way: a turn-ending plain-text briefing per gap (or a compact numbered list for several small ones), decisions from text replies; widget on request only (multi-select chunks of ≤4 — the 4-option limit applies to multi-select too). Include ticked gaps in the top-level review body, skip the rest. For a gap the user includes, offer — only now, never unprompted — to file a tracker ticket or draft the config/refactor as a follow-up. Accepted tickets/follow-ups are queued and executed only after the stage-6 confirmation, never before.
+Restraint findings — stage 3.5 `addressed-as-agreed`, or a stage 4 third-call-site note — get `Restraint:` set, the reasoning in the bullets, and `Decision: drop` prefilled. They are never in the auto-post set.
+
+Then print in chat, and END the turn:
+1. The file path.
+2. A one-screen overview: risk header, then one numbered line per finding and gap — `F1 [blocker] path:line — one-liner → post`, using the prefilled decisions.
+3. The instruction: "Edit `Decision:` lines and comment text in the file, then reply `done`. Or give decisions here (`F1 drop, G2 ticket`)."
+
+Decisions given in chat are written back into the file before stage 6, so the file stays the source of truth. `discuss` (in the file or in chat) is talked through in chat with the stage-2 context available; write the outcome back as a final decision and, if the wording changed, into the ```comment fence. Chat text that reads as an instruction ("make it softer", "drop F3–F5") is an instruction — act on it and confirm the resulting wording; never post instruction text verbatim.
+
+Accepted `ticket` gaps and `in-pr` asks are queued; nothing is filed or posted until stage 6.
 
 ## Stage 6 — Recap and single posting confirmation
 
-Print the recap in three parts: findings to post inline (with final wording), review-body content (summary + included repo-level gaps), and queued tickets/follow-ups — the confirmation must cover nothing the user cannot see in the recap. The recap ENDS its turn as plain text (stage 5's rendering constraint applies here too); take the single confirmation from the user's text reply, widget only on "go". On yes, post via the team skill's `references/post-to-github.md` (resolve the path from the stage-3 skill load's base directory), under these overrides and rules:
+Re-read the report file. Refuse to proceed while any `Decision: discuss` remains or a value is outside the allowed set — resolve those first. If a non-blocker `addressed-as-agreed` finding is set to `post`, confirm the override explicitly: it re-opens a settled concern with the colleague.
 
-- **Payload = the approved subset only**, with the final triaged wording — never the pipeline's raw report. Keep each finding's original `code_snippet` intact so inline anchoring still works.
+Print the recap in chat, in four parts: inline findings to post (final wording from the ```comment fences), review body (summary + `in-pr` gap asks), thread replies, and queued tickets. The recap ENDS its turn as plain text; take the single confirmation from the user's text reply. On yes, post via the team skill's `references/post-to-github.md` (resolve the path from the stage-3 skill load's base directory), under these overrides and rules:
+
+- **Payload = the approved subset only**, with the wording from the file — never the pipeline's raw report. Keep each finding's original `code_snippet` intact so inline anchoring still works.
 - **No auto-fallback.** Ignore the reference's `|| gh pr comment`; on any posting failure — or if the reference file is missing — STOP and hand the user the composed content. Never improvise raw `gh api` posting.
 - **No silent dedup.** The reference's dedup-by-`path:line:side` does NOT apply to the approved subset — triage already decided what posts, and re-reviews legitimately land on previously-commented lines. If anything is dropped for any reason, say so after posting.
 - **Anchoring.** Out-of-hunk findings anchor to the nearest hunk line with the real location called out at the top of the comment body; the review body is reserved for genuinely cross-cutting content.
 - **Order: review first, thread replies second.** A finding that responds to an existing PR thread (a still-open prior finding, or closing a thread the author declined once the user has ruled on it) posts as a reply (`gh api .../pulls/<n>/comments/<id>/replies`, using the ids captured in stage 3) — never as a new comment. The recap labels these as thread replies.
 - **Event: always COMMENT** — never REQUEST_CHANGES or APPROVE; the human decides the verdict on GitHub.
 
-On no, the review posts nothing — but queued tickets/follow-ups do not silently die with it: ask whether they still proceed. Either way, return the clone to the branch recorded in stage 1.
+After posting, file the queued tickets, then append **§6 Posted** to the report file: date, review URL, what posted, what was dropped and why, ticket links.
+
+On no, the review posts nothing — but queued tickets do not silently die with it: ask whether they still proceed. Either way, return the clone to the branch recorded in stage 1.
 
 ## Guardrails
 
 - **Nothing posts to GitHub before the stage-6 confirmation.** Per-finding "Post" answers select content; they do not send it.
 - **Briefing before findings, always.** Orientation loses its value once judgment has been rendered.
+- **The report file is the source of truth.** Decisions and wording live in the file; chat decisions are written back before stage 6. Findings are never walked through one by one in chat.
+- **Size gaps before routing them.** Small gaps are in-PR asks; only large refactors become tickets.
 - **Re-review restraint (stage 3.5).** A concern the colleague already addressed as agreed is not re-opened for tighter specification or a different strategy — only a blocker (breakage/critical) re-opens it. Systemic patterns become follow-up tickets, never repeat change-requests on the same PR.
 - **Do not duplicate the team pipeline.** If `carto-ps-pr-review` is unavailable, stop and tell the user — do not improvise a replacement review.
 - **Report faithfully.** If a stage failed or was skipped, say so in the recap.
@@ -128,3 +198,7 @@ On no, the review posts nothing — but queued tickets/follow-ups do not silentl
 | Re-running target resolution inside the team skill | Pass the already-checked-out PR and base ref into stage 3 |
 | Re-requesting changes on an already-fixed concern because you'd specify it differently now | Re-review restraint: blocker-only bar; suppress refinements and strategy changes as restraint notes |
 | Re-flagging a recurring issue as a repeat PR comment | Route systemic reveals to a follow-up ticket; the colleague's fix stands |
+| Walking findings through chat one at a time | Write §3/§4 to the report file; the user decides in the file |
+| Every systemic gap becomes a ticket | Size it: enabling a rule or adding a CI line is an in-PR ask |
+| §2 file table that repeats `git diff --stat` | Say what each file is, where it sits, and whether that location fits |
+| Posting the pipeline's comment text after the user edited the fence | The ```comment fence in the file is what posts, verbatim |
