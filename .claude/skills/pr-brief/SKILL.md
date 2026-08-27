@@ -38,6 +38,37 @@ Do not mention findings yet. The briefing is orientation, not judgment.
 
 Print a one-line status first so the user knows briefing → findings is in progress. Then invoke `carto-ps-core-team:carto-ps-pr-review` — its instructions load into your context and you follow its steps yourself. Treat its target-resolution step as already satisfied by the stage-1 checkout and `$BASE` fetch (same session, state carries over) and run everything through its report emission — classification, reviewer fan-out, prior-review audit, adversarial verification, printed report. **Stop before its posting selector** (the step that asks keep-local vs post): stages 5–6 below replace it. Keep its verified findings list with severities, `file:line`, comments, and suggestions. One addition to its prior-review fetch: extend the jq to also capture each prior comment's `id` and `in_reply_to_id`, so stage-6 thread replies target exact threads instead of fuzzy-matching by path/line. If the pipeline emits zero verified findings, print the clean report and stop — stages 4–6 have nothing to work on (gaps only exist via findings). State that plainly, return the clone to the recorded branch (mentioning the leftover local PR branch), and end without any posting question.
 
+## Stage 3.5 — Re-review restraint (protect the colleague from re-litigation)
+
+This stage runs **only on a re-review** — a second or later pass where the stage-3 prior-review audit found earlier review comments (ours or the team's) that the colleague has since addressed. On a first review there is nothing to re-open; skip it.
+
+**The failure it prevents:** the colleague implemented the agreed fix, and the re-review requests changes on that same concern anyway — not because the fix is wrong, but because you now want it specified more tightly, or you now lean toward a different strategy. Both re-open a settled question and make the colleague redo work that was never defective. **You cannot keep re-asking the same person about the same area across passes.** A review that moves its own goalposts is not honest.
+
+Classify each verified finding against the prior-review audit:
+
+1. **Brand-new defect** — the fix introduced a new problem on a concern no prior comment raised. A normal new finding. This stage does not touch it; it flows to stage 4 at its real severity.
+2. **Re-opens an addressed concern** — a prior comment raised it, the colleague changed that code, and the concern is resolved by any reasonable reading. Apply the bar below.
+
+**The bar for re-opening an addressed concern — blocker only.** Raise it a second time **only if the implemented fix breaks something or is critical**: a correctness bug, data loss, security hole, or broken contract that the fix introduced or left behind. Everything below blocker — "specify it more", "I'd do it differently now", cosmetic, style, a cleaner abstraction — is **suppressed**: mark it `addressed-as-agreed — not for re-posting` and carry it into stage 5 as a restraint note (surfaced, never in the auto-post set — see stage 5).
+
+**Systemic reveals go to a ticket, not back to the colleague.** If a suppressed re-open exposes a genuine recurring or systemic issue, do not re-ask on this PR. Route the long-term fix to a repo-level gap → follow-up ticket via stage 4/5, and never post a blocking comment on the colleague's PR for it. The colleague's fix stands; the class-level fix is separate work.
+
+**Red flags — you are about to re-litigate a settled concern:**
+- "The fix works, but I'd specify it more precisely now."
+- "This is fine, but a different strategy would be cleaner."
+- "It's technically addressed, but while we're here…"
+- "I agreed this shape last round, but…"
+
+All of these mean: **the concern is settled. Suppress it as a restraint note unless it is a blocker.**
+
+| Re-review rationalization | Reality |
+|---|---|
+| "The fix is fine but under-specified" | Under-specification you did not raise last round is your change of mind, not their defect. Suppress. |
+| "A different strategy is cleaner now" | You accepted the strategy when you agreed the fix. Re-opening it burns the colleague's time. Suppress. |
+| "It's a small extra tweak on the same line" | Small + already-addressed is still re-litigation. Suppress unless blocker. |
+| "It's a recurring pattern, I should flag it" | Flag the pattern as a follow-up ticket, not as a repeat change-request on this PR. |
+| "I'm just being thorough" | Thorough is not endless. Honest review does not move its own goalposts across passes. |
+
 ## Stage 4 — Systemic-fix escalation
 
 For each verified defect finding, ask: **what prevents this class of issue from recurring?** Attach a `systemic_fix` when one exists. Two kinds:
@@ -47,11 +78,15 @@ For each verified defect finding, ask: **what prevents this class of issue from 
 
 Dedup systemic fixes across findings into **repo-level gaps** (five inline-import findings → one "enable PLC0415" gap). Keep the finding↔gap links. A gap survives even if every finding linked to it is later dropped — it is a repo-level observation; note the drops when triaging it.
 
+On a re-review, a systemic pattern surfaced by a suppressed re-open (stage 3.5) attaches **only** as a repo-level gap → follow-up ticket. It never becomes a repeated change-request comment on the colleague's PR.
+
 For each finding with a systemic fix, draft the "longer term: …" sentence now, so the user sees the exact posted wording during step-through.
 
 ## Stage 5 — Step-through triage
 
 First print a one-screen overview: the risk header + a numbered list (severity tag + one-liner per finding). Map whatever severity scale the pipeline emits onto the user's tag set by meaning, not by label: must-fix-before-merge → `[blocker]`, important-but-not-blocking → `[should fix]`, cosmetic → `[nit]`, no-opinion-asking → `[question]`, genuinely-noteworthy-positive → `[praise]`.
+
+Findings marked as restraint notes — stage 3.5 `addressed-as-agreed`, or a stage 4 third-call-site note — appear in step-through flagged as such and **default to drop**: present the reasoning, take the user's call, but never place them in the auto-post set. If the user overrides to post an `addressed-as-agreed` note that is not a blocker, confirm the override explicitly, because it re-opens a settled concern with the colleague.
 
 Then present **one finding at a time**, as a plain-text briefing that ENDS the turn (verified live: text sharing a turn with an AskUserQuestion call often never renders — the briefing must be the last thing in the turn, the question comes only after the user replies):
 - **What the code does** (with the real code context around `file:line`, read from the checkout), **what breaks** (concrete failure mode), **why this severity**, the **draft comment** verbatim, and **your recommendation**.
@@ -78,6 +113,7 @@ On no, the review posts nothing — but queued tickets/follow-ups do not silentl
 
 - **Nothing posts to GitHub before the stage-6 confirmation.** Per-finding "Post" answers select content; they do not send it.
 - **Briefing before findings, always.** Orientation loses its value once judgment has been rendered.
+- **Re-review restraint (stage 3.5).** A concern the colleague already addressed as agreed is not re-opened for tighter specification or a different strategy — only a blocker (breakage/critical) re-opens it. Systemic patterns become follow-up tickets, never repeat change-requests on the same PR.
 - **Do not duplicate the team pipeline.** If `carto-ps-pr-review` is unavailable, stop and tell the user — do not improvise a replacement review.
 - **Report faithfully.** If a stage failed or was skipped, say so in the recap.
 - **When the user asks you to apply fixes to the PR branch instead of posting:** stage files explicitly by path — never `git add -A`/`git add .` (tooling side-artifacts like stray lockfiles get swept into the PR silently). Diff-stat the commit against the intended file list before pushing, and confirm before pushing when the branch belongs to a colleague — pushing to someone else's PR is outward-facing.
@@ -90,3 +126,5 @@ On no, the review posts nothing — but queued tickets/follow-ups do not silentl
 | Systemic fix = "add linting" | Name the exact rule and where it plugs in, or drop the suggestion |
 | Suggesting an abstraction over two similar-but-distinct blocks | Third-call-site rule: note it, recommend waiting |
 | Re-running target resolution inside the team skill | Pass the already-checked-out PR and base ref into stage 3 |
+| Re-requesting changes on an already-fixed concern because you'd specify it differently now | Re-review restraint: blocker-only bar; suppress refinements and strategy changes as restraint notes |
+| Re-flagging a recurring issue as a repeat PR comment | Route systemic reveals to a follow-up ticket; the colleague's fix stands |
