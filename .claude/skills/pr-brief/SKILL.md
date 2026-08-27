@@ -164,7 +164,7 @@ Write **§3 Findings** and **§4 Systemic gaps** into the report file. Map whate
 
 Restraint findings — stage 3.5 `addressed-as-agreed`, or a stage 4 third-call-site note — get `Restraint:` set, the reasoning in the bullets, and `Decision: drop` prefilled. They are never in the auto-post set.
 
-On a re-review, honor the §5 ledger: a finding you `dropped` last round is not re-listed in §3 for re-decision unless it is now a blocker (per stage 3.5). A `fixed` prior finding does not appear in §3 either — it is acknowledged via a stage-6 thread reply, not re-posted. Only `still-open` prior findings and genuinely new ones populate §3.
+On a re-review, honor the §5 ledger: a finding you `dropped` last round is not re-listed in §3 for re-decision unless it is now a blocker (per stage 3.5). A `fixed` prior finding does not appear in §3 either — it is acknowledged via a stage-6 thread reply, not re-posted. Only `still-open` prior findings and genuinely new ones populate §3. Number new findings continuing from the highest F/G in the §5 ledger — never reuse a prior round's F/G number, so §5 references stay unambiguous across rounds.
 
 Then print in chat, and END the turn:
 1. The file path.
