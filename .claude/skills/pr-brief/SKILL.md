@@ -11,7 +11,7 @@ Two modes. **Brief-only** — stages 1–2: orient the user on what the PR is, w
 ## Stage 1 — Resolve and checkout
 
 0. **Fresh session.** If this session already carries other work (long transcript, MCP results, unrelated files), tell the user to `/clear` and re-run `/pr-brief <url>` — every later call re-sends that context, and the report file holds all state this flow needs. Proceed only in a clean session or on the user's explicit "continue here".
-1. **Pick the mode from the user's words.** "review", "findings", "what should I comment", "check this" → **full review**. "brief me", "explain", "what is this PR", "what does it change", "why", "information" → **brief-only**. A bare URL with no verb → **brief-only** (the cheap default); the stage-2 output ends by offering `review` to continue into stage 3 in the same session. Do not ask which mode — infer it and state it in the stage-2 status line.
+1. **Pick the mode from the user's words.** "review", "findings", "what should I comment", "check this" → **full review**. "brief me", "explain", "what is this PR", "what does it change", "why", "information" → **brief-only**. A bare URL with no verb → **brief-only** (the cheap default); the stage-2 output ends by offering `review` to continue into stage 3 in the same session. Do not ask which mode — infer it and state it in the stage-2 status line. Also set **round**: if `~/pr-briefs/<owner>-<repo>-pr<n>.md` already exists this is a **re-review** (round k+1) — read its §6 `last-reviewed HEAD` into `$PREV` for delta mode; otherwise round 1, `$PREV` empty.
 2. Check that the `carto-ps-core-team:carto-ps-pr-review` skill is available in this session. In brief-only mode, skip this check. If it is not listed but its SKILL.md exists on disk (plugin cache/marketplace, possibly a newer version than the session loaded), read that file and follow it — that is the real pipeline, not improvisation. Only when no pipeline definition is readable: tell the user immediately and ask whether to proceed briefing-only (stages 1–2) or stop.
 3. Parse owner/repo/number from the PR URL. `gh pr view <n> -R <owner>/<repo> --json author,title,body,baseRefName,headRefName,headRefOid,commits,files,url` (`-R` works without a clone), plus linked issues/Shortcut tickets referenced in the body or branch name. Enforce the routing the description promises: if the author is the user (`gh api user`), hand off to `carto-ps-pr-review` directly; if the author is `dependabot[bot]`, hand off to `carto-ps-dependabot-review`. The briefing is for colleagues' work.
 4. Find the local clone. Check the cwd first; otherwise `find ~ -maxdepth 3 -type d -name <repo> -not -path '*/.*/*' 2>/dev/null`. A name match is not a clone match: verify with `git remote -v` that the candidate references `<owner>/<repo>` — a fork or stale copy silently poisons everything downstream. Multiple verified matches → ask which. None → STOP and ask the user where it lives (or whether to clone it, and where to) — never guess a path.
@@ -24,7 +24,7 @@ Two modes. **Brief-only** — stages 1–2: orient the user on what the PR is, w
 
 Every run produces exactly one Markdown file: `~/pr-briefs/<owner>-<repo>-pr<n>.md` (`mkdir -p ~/pr-briefs`). It lives outside the repo, survives the session, and is the **single source of truth** for what posts and with which wording. Stage 2 writes §1–§2; stage 5 writes §3–§4; stage 6 reads the file back and appends §6.
 
-If the file already exists (re-review), first copy each old finding/gap one-liner with its `Decision:` into `## 5. Previous rounds`, then overwrite the rest.
+**Re-review is detected here:** the file already exists. When it does, this is round k+1. Read its §6 for `last-reviewed HEAD` (the SHA the previous round reviewed) — that drives delta mode in stages 2–3. Before overwriting, fold the previous round into `## 5. Previous rounds` as a **status ledger**: one line per prior finding and gap with its round-k decision and a status you set this round — `fixed` (the code moved and the concern is resolved), `still-open` (unchanged), or `dropped` (you chose drop last round). Then overwrite §1–§4 and §6 for the new round. Never silently discard a prior decision — it must land in §5.
 
 Skeleton — keep the headings and field names exactly; stage 6 parses `Decision:` lines and ```comment fences:
 
@@ -73,9 +73,12 @@ Decision: post
 Decision: in-pr
 
 ## 5. Previous rounds
-<re-review only: F/G one-liners + decisions from the earlier file>
+<re-review only. One line per prior F/G:>
+<`round k · F2 [should fix] path:line — one-liner · decided post · status: fixed in <sha>`>
+<`round k · G1 small — enable PLC0415 · decided in-pr · status: still-open`>
 
 ## 6. Posted
+last-reviewed HEAD: <headRefOid this round>
 <stage 6 appends: date, review URL, what posted, what was dropped and why>
 ```
 
@@ -92,7 +95,7 @@ Dispatch orientation agents as `subagent_type: pr-brief-reader` (`~/.claude/agen
 - **Surroundings** — for each touched area, read the modules around the changed files (callers, the subsystem's entry points, its README section) so the briefing explains the code as it exists, not just the diff. Also report, per touched file, its role and whether its location follows the repo's structure and naming (sibling modules, existing layers, where similar files already live).
 - **History** — `git log` of the touched files, recent merged PRs on the same paths (`gh pr list --search`), the linked ticket content, and the PR's own discussion so far.
 
-Synthesize into **§1 What and why** and **§2 How it fits the codebase** of the report file, written for a reviewer who has never touched this code. §2 lists every file from `gh pr view --json files` (added / modified / deleted / moved — detect moves with `git diff --stat -M $BASE...HEAD`) and answers, per file, whether it makes sense where it is. `flag:` when a file lands in the wrong layer, duplicates an existing module, breaks a naming convention, leaves callers orphaned after a delete/move, or when a move loses history without reason. A `flag` in §2 is orientation, not a finding; stage 4 may promote a repeated one to a gap.
+On a **re-review** (`$PREV` set), do not re-brief the whole PR: reuse the existing §1/§2 and only run one `pr-brief-reader` over `git diff $PREV..HEAD` to append a `### Changes since round k` note under §1 (what the new commits do, whether they address prior findings). Skip the full fan-out. On **round 1**, synthesize into **§1 What and why** and **§2 How it fits the codebase** of the report file, written for a reviewer who has never touched this code. §2 lists every file from `gh pr view --json files` (added / modified / deleted / moved — detect moves with `git diff --stat -M $BASE...HEAD`) and answers, per file, whether it makes sense where it is. `flag:` when a file lands in the wrong layer, duplicates an existing module, breaks a naming convention, leaves callers orphaned after a delete/move, or when a move loses history without reason. A `flag` in §2 is orientation, not a finding; stage 4 may promote a repeated one to a gap.
 
 Do not write findings yet.
 
@@ -101,7 +104,7 @@ Do not write findings yet.
 
 ## Stage 3 — Findings via the team pipeline
 
-Print a one-line status first so the user knows briefing → findings is in progress. Then invoke `carto-ps-core-team:carto-ps-pr-review` — its instructions load into your context and you follow its steps yourself. Treat its target-resolution step as already satisfied by the stage-1 checkout and `$BASE` fetch (same session, state carries over) and run everything through its report emission — classification, reviewer fan-out, prior-review audit, adversarial verification, printed report. **Stop before its posting selector** (the step that asks keep-local vs post): stages 5–6 below replace it. Keep its verified findings list with severities, `file:line`, comments, and suggestions. Model tiering inside the pipeline: dispatch its reviewer fan-out as `subagent_type: pr-brief-reviewer` (`~/.claude/agents/pr-brief-reviewer.md`: Sonnet, read-only, 300-word return contract) — fall back to `model: sonnet` with the contract in the prompt if the type is not listed; the adversarial verifier keeps the session model — it is the quality gate and the one place Fable earns its cost. On a small PR (stage 2 sizing), spawn reviewers only for the touched area — never the full bucket set. One addition to its prior-review fetch: extend the jq to also capture each prior comment's `id` and `in_reply_to_id`, so stage-6 thread replies target exact threads instead of fuzzy-matching by path/line. If the pipeline emits zero verified findings, print the clean report and stop — stages 4–6 have nothing to work on (gaps only exist via findings). State that plainly, return the clone to the recorded branch (mentioning the leftover local PR branch), and end without any posting question.
+Print a one-line status first so the user knows briefing → findings is in progress. Then invoke `carto-ps-core-team:carto-ps-pr-review` — its instructions load into your context and you follow its steps yourself. Treat its target-resolution step as already satisfied by the stage-1 checkout and `$BASE` fetch (same session, state carries over) and run everything through its report emission — classification, reviewer fan-out, prior-review audit, adversarial verification, printed report. **Stop before its posting selector** (the step that asks keep-local vs post): stages 5–6 below replace it. Keep its verified findings list with severities, `file:line`, comments, and suggestions. Model tiering inside the pipeline: dispatch its reviewer fan-out as `subagent_type: pr-brief-reviewer` (`~/.claude/agents/pr-brief-reviewer.md`: Sonnet, read-only, 300-word return contract) — fall back to `model: sonnet` with the contract in the prompt if the type is not listed; the adversarial verifier keeps the session model — it is the quality gate and the one place Fable earns its cost. On a small PR (stage 2 sizing), spawn reviewers only for the touched area — never the full bucket set. **On a re-review (`$PREV` set): scope the reviewer fan-out to the delta `git diff $PREV..HEAD`** — reviewers read only the new commits; the adversarial verifier still gets full PR context. A defect in round-1 code you already triaged is not re-surfaced by design; §5 carries its prior decision. One addition to its prior-review fetch: extend the jq to also capture each prior comment's `id` and `in_reply_to_id`, so stage-6 thread replies target exact threads instead of fuzzy-matching by path/line. If the pipeline emits zero verified findings, print the clean report and stop — stages 4–6 have nothing to work on (gaps only exist via findings). State that plainly, return the clone to the recorded branch (mentioning the leftover local PR branch), and end without any posting question.
 
 ## Stage 3.5 — Re-review restraint (protect the colleague from re-litigation)
 
@@ -109,7 +112,7 @@ This stage runs **only on a re-review** — a second or later pass where the sta
 
 **The failure it prevents:** the colleague implemented the agreed fix, and the re-review requests changes on that same concern anyway — not because the fix is wrong, but because you now want it specified more tightly, or you now lean toward a different strategy. Both re-open a settled question and make the colleague redo work that was never defective. **You cannot keep re-asking the same person about the same area across passes.** A review that moves its own goalposts is not honest.
 
-Classify each verified finding against the prior-review audit:
+Cross-check the §5 ledger first: a prior posted finding whose code moved and whose concern is resolved is `fixed` — it is not re-posted; stage 6 offers a thread reply that acknowledges the fix. A prior finding still unchanged is `still-open` — its comment stands as a thread reply, never a new comment. Then classify each *new* verified finding against the prior-review audit:
 
 1. **Brand-new defect** — the fix introduced a new problem on a concern no prior comment raised. A normal new finding. This stage does not touch it; it flows to stage 4 at its real severity.
 2. **Re-opens an addressed concern** — a prior comment raised it, the colleague changed that code, and the concern is resolved by any reasonable reading. Apply the bar below.
@@ -161,6 +164,8 @@ Write **§3 Findings** and **§4 Systemic gaps** into the report file. Map whate
 
 Restraint findings — stage 3.5 `addressed-as-agreed`, or a stage 4 third-call-site note — get `Restraint:` set, the reasoning in the bullets, and `Decision: drop` prefilled. They are never in the auto-post set.
 
+On a re-review, honor the §5 ledger: a finding you `dropped` last round is not re-listed in §3 for re-decision unless it is now a blocker (per stage 3.5). A `fixed` prior finding does not appear in §3 either — it is acknowledged via a stage-6 thread reply, not re-posted. Only `still-open` prior findings and genuinely new ones populate §3.
+
 Then print in chat, and END the turn:
 1. The file path.
 2. A one-screen overview: risk header, then one numbered line per finding and gap — `F1 [blocker] path:line — one-liner → post`, using the prefilled decisions.
@@ -180,10 +185,10 @@ Print the recap in chat, in four parts: inline findings to post (final wording f
 - **No auto-fallback.** Ignore the reference's `|| gh pr comment`; on any posting failure — or if the reference file is missing — STOP and hand the user the composed content. Never improvise raw `gh api` posting.
 - **No silent dedup.** The reference's dedup-by-`path:line:side` does NOT apply to the approved subset — triage already decided what posts, and re-reviews legitimately land on previously-commented lines. If anything is dropped for any reason, say so after posting.
 - **Anchoring.** Out-of-hunk findings anchor to the nearest hunk line with the real location called out at the top of the comment body; the review body is reserved for genuinely cross-cutting content.
-- **Order: review first, thread replies second.** A finding that responds to an existing PR thread (a still-open prior finding, or closing a thread the author declined once the user has ruled on it) posts as a reply (`gh api .../pulls/<n>/comments/<id>/replies`, using the ids captured in stage 3) — never as a new comment. The recap labels these as thread replies.
+- **Order: review first, thread replies second.** A finding that responds to an existing PR thread posts as a reply (`gh api .../pulls/<n>/comments/<id>/replies`, using the ids captured in stage 3) — never as a new comment. Three kinds, all labeled as thread replies in the recap: a **still-open** prior finding whose concern remains, a **fixed** prior finding (a one-line "resolved in `<sha>` — thanks" acknowledgement, only if the user opts in during triage), and closing a thread the author declined once the user has ruled on it.
 - **Event: always COMMENT** — never REQUEST_CHANGES or APPROVE; the human decides the verdict on GitHub.
 
-After posting, file the queued tickets, then append **§6 Posted** to the report file: date, review URL, what posted, what was dropped and why, ticket links.
+After posting, file the queued tickets, then write **§6 Posted**: `last-reviewed HEAD: <this round's headRefOid>` (so the next round's delta starts here), date, review URL, what posted, what was dropped and why, ticket links.
 
 On no, the review posts nothing — but queued tickets do not silently die with it: ask whether they still proceed. Either way, return the clone to the branch recorded in stage 1.
 
@@ -193,6 +198,7 @@ On no, the review posts nothing — but queued tickets do not silently die with 
 - **Briefing before findings, always.** Orientation loses its value once judgment has been rendered.
 - **The report file is the source of truth.** Decisions and wording live in the file; chat decisions are written back before stage 6. Findings are never walked through one by one in chat.
 - **Brief-only means no findings.** In brief-only mode nothing from stages 3–6 runs and no judgment appears in the file or in chat — not even "one thing looks off". The user asked for information.
+- **Re-review is delta.** Round k+1 reuses §1/§2, reviews only `$PREV..HEAD`, and honors the §5 ledger: dropped stays dropped, fixed is acknowledged not re-posted, still-open replies on its thread. The last-reviewed SHA lives in §6.
 - **Token discipline.** Fresh session, Sonnet for reading agents, Fable for verification and judgment, 300-word agent returns, fan-out sized to the PR. A small PR never triggers the full fan-out.
 - **Size gaps before routing them.** Small gaps are in-PR asks; only large refactors become tickets.
 - **Re-review restraint (stage 3.5).** A concern the colleague already addressed as agreed is not re-opened for tighter specification or a different strategy — only a blocker (breakage/critical) re-opens it. Systemic patterns become follow-up tickets, never repeat change-requests on the same PR.
@@ -216,4 +222,7 @@ On no, the review posts nothing — but queued tickets do not silently die with 
 | Full 5-agent fan-out on a one-file PR | Size first; small PR = one Surroundings agent, history inline |
 | Reviewers and readers on the session model | `pr-brief-reader` / `pr-brief-reviewer` agent types (Sonnet); keep the verifier on the session model |
 | Slipping a finding into a brief-only run | Brief-only = §1–§2 only; offer `review` and stop |
+| Re-briefing and re-reviewing the whole PR on round 2 | Delta: reuse §1/§2, fan out over `$PREV..HEAD`, verifier keeps full context |
+| Re-listing a dropped finding so the user decides it again | §5 ledger: dropped stays dropped unless now a blocker |
+| Re-posting a finding the colleague fixed | Acknowledge via thread reply on opt-in; never a fresh comment |
 | Posting the pipeline's comment text after the user edited the fence | The ```comment fence in the file is what posts, verbatim |
