@@ -10,6 +10,7 @@ Brief the user on an unfamiliar PR **before** any findings appear, run the team 
 
 ## Stage 1 — Resolve and checkout
 
+0. **Fresh session.** If this session already carries other work (long transcript, MCP results, unrelated files), tell the user to `/clear` and re-run `/pr-brief <url>` — every later call re-sends that context, and the report file holds all state this flow needs. Proceed only in a clean session or on the user's explicit "continue here".
 1. Check that the `carto-ps-core-team:carto-ps-pr-review` skill is available in this session. If it is not listed but its SKILL.md exists on disk (plugin cache/marketplace, possibly a newer version than the session loaded), read that file and follow it — that is the real pipeline, not improvisation. Only when no pipeline definition is readable: tell the user immediately and ask whether to proceed briefing-only (stages 1–2) or stop.
 2. Parse owner/repo/number from the PR URL. `gh pr view <n> -R <owner>/<repo> --json author,title,body,baseRefName,headRefName,headRefOid,commits,files,url` (`-R` works without a clone), plus linked issues/Shortcut tickets referenced in the body or branch name. Enforce the routing the description promises: if the author is the user (`gh api user`), hand off to `carto-ps-pr-review` directly; if the author is `dependabot[bot]`, hand off to `carto-ps-dependabot-review`. The briefing is for colleagues' work.
 3. Find the local clone. Check the cwd first; otherwise `find ~ -maxdepth 3 -type d -name <repo> -not -path '*/.*/*' 2>/dev/null`. A name match is not a clone match: verify with `git remote -v` that the candidate references `<owner>/<repo>` — a fork or stale copy silently poisons everything downstream. Multiple verified matches → ask which. None → STOP and ask the user where it lives (or whether to clone it, and where to) — never guess a path.
@@ -81,7 +82,12 @@ Decision: in-pr
 
 ## Stage 2 — Deep-dive briefing (before any findings)
 
-Fan out parallel Explore agents in a single message — one **Surroundings** agent per touched area (an area = the team skill's reviewer routing buckets: frontend / api / functions / db-data, falling back to top-level directory; cap at 4, merge small areas) plus one **History** agent:
+Size the PR first from `gh pr view --json files,additions,deletions`: **small** = one area and fewer than ~200 changed lines; anything else is **large**. Areas = the team skill's reviewer routing buckets (frontend / api / functions / db-data), falling back to top-level directory.
+
+- Small PR: one **Surroundings** agent only. Do the history inline (`git log --oneline -15 -- <files>`, ticket body from the PR description); do not spawn a History agent.
+- Large PR: one **Surroundings** agent per area (cap at 4, merge small areas) plus one **History** agent, all in a single message.
+
+Orientation agents run with `model: sonnet` — they read and summarize; judgment stays in the main loop. Every agent prompt ends with the return contract: at most 300 words, structured bullets, no file dumps and no code blocks over 10 lines.
 - **Surroundings** — for each touched area, read the modules around the changed files (callers, the subsystem's entry points, its README section) so the briefing explains the code as it exists, not just the diff. Also report, per touched file, its role and whether its location follows the repo's structure and naming (sibling modules, existing layers, where similar files already live).
 - **History** — `git log` of the touched files, recent merged PRs on the same paths (`gh pr list --search`), the linked ticket content, and the PR's own discussion so far.
 
@@ -91,7 +97,7 @@ Do not write findings yet. Print one line in chat: the file path and "briefing w
 
 ## Stage 3 — Findings via the team pipeline
 
-Print a one-line status first so the user knows briefing → findings is in progress. Then invoke `carto-ps-core-team:carto-ps-pr-review` — its instructions load into your context and you follow its steps yourself. Treat its target-resolution step as already satisfied by the stage-1 checkout and `$BASE` fetch (same session, state carries over) and run everything through its report emission — classification, reviewer fan-out, prior-review audit, adversarial verification, printed report. **Stop before its posting selector** (the step that asks keep-local vs post): stages 5–6 below replace it. Keep its verified findings list with severities, `file:line`, comments, and suggestions. One addition to its prior-review fetch: extend the jq to also capture each prior comment's `id` and `in_reply_to_id`, so stage-6 thread replies target exact threads instead of fuzzy-matching by path/line. If the pipeline emits zero verified findings, print the clean report and stop — stages 4–6 have nothing to work on (gaps only exist via findings). State that plainly, return the clone to the recorded branch (mentioning the leftover local PR branch), and end without any posting question.
+Print a one-line status first so the user knows briefing → findings is in progress. Then invoke `carto-ps-core-team:carto-ps-pr-review` — its instructions load into your context and you follow its steps yourself. Treat its target-resolution step as already satisfied by the stage-1 checkout and `$BASE` fetch (same session, state carries over) and run everything through its report emission — classification, reviewer fan-out, prior-review audit, adversarial verification, printed report. **Stop before its posting selector** (the step that asks keep-local vs post): stages 5–6 below replace it. Keep its verified findings list with severities, `file:line`, comments, and suggestions. Model tiering inside the pipeline: dispatch its reviewer fan-out with `model: sonnet` and the same 300-word return contract; the adversarial verifier keeps the session model — it is the quality gate and the one place Fable earns its cost. On a small PR (stage 2 sizing), spawn reviewers only for the touched area — never the full bucket set. One addition to its prior-review fetch: extend the jq to also capture each prior comment's `id` and `in_reply_to_id`, so stage-6 thread replies target exact threads instead of fuzzy-matching by path/line. If the pipeline emits zero verified findings, print the clean report and stop — stages 4–6 have nothing to work on (gaps only exist via findings). State that plainly, return the clone to the recorded branch (mentioning the leftover local PR branch), and end without any posting question.
 
 ## Stage 3.5 — Re-review restraint (protect the colleague from re-litigation)
 
@@ -182,6 +188,7 @@ On no, the review posts nothing — but queued tickets do not silently die with 
 - **Nothing posts to GitHub before the stage-6 confirmation.** Per-finding "Post" answers select content; they do not send it.
 - **Briefing before findings, always.** Orientation loses its value once judgment has been rendered.
 - **The report file is the source of truth.** Decisions and wording live in the file; chat decisions are written back before stage 6. Findings are never walked through one by one in chat.
+- **Token discipline.** Fresh session, Sonnet for reading agents, Fable for verification and judgment, 300-word agent returns, fan-out sized to the PR. A small PR never triggers the full fan-out.
 - **Size gaps before routing them.** Small gaps are in-PR asks; only large refactors become tickets.
 - **Re-review restraint (stage 3.5).** A concern the colleague already addressed as agreed is not re-opened for tighter specification or a different strategy — only a blocker (breakage/critical) re-opens it. Systemic patterns become follow-up tickets, never repeat change-requests on the same PR.
 - **Do not duplicate the team pipeline.** If `carto-ps-pr-review` is unavailable, stop and tell the user — do not improvise a replacement review.
@@ -201,4 +208,6 @@ On no, the review posts nothing — but queued tickets do not silently die with 
 | Walking findings through chat one at a time | Write §3/§4 to the report file; the user decides in the file |
 | Every systemic gap becomes a ticket | Size it: enabling a rule or adding a CI line is an in-PR ask |
 | §2 file table that repeats `git diff --stat` | Say what each file is, where it sits, and whether that location fits |
+| Full 5-agent fan-out on a one-file PR | Size first; small PR = one Surroundings agent, history inline |
+| Reviewers and readers on the session model | `model: sonnet` for reading and reviewing; keep the verifier on the session model |
 | Posting the pipeline's comment text after the user edited the fence | The ```comment fence in the file is what posts, verbatim |
