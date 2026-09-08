@@ -12,14 +12,18 @@ cherry-pick:
 # zsh config
 curl -fsSL https://raw.githubusercontent.com/hatsyio/dev-config/main/.zshrc -o ~/.zshrc
 
-# AI coding-agent rules
-curl -fsSL https://raw.githubusercontent.com/hatsyio/dev-config/main/AGENTS.md -o ~/AGENTS.md
+# Codex global rules and software-engineering profile
+mkdir -p ~/.codex/agents
+curl -fsSL https://raw.githubusercontent.com/hatsyio/dev-config/main/AGENTS.md -o ~/.codex/AGENTS.md
+curl -fsSL https://raw.githubusercontent.com/hatsyio/dev-config/main/.codex/agents/ingeniero-de-software.toml \
+  -o ~/.codex/agents/ingeniero-de-software.toml
 ```
 
 Or open the raw files in a browser and copy only the parts you care about:
 
 - <https://raw.githubusercontent.com/hatsyio/dev-config/main/.zshrc>
 - <https://raw.githubusercontent.com/hatsyio/dev-config/main/AGENTS.md>
+- <https://raw.githubusercontent.com/hatsyio/dev-config/main/.codex/agents/ingeniero-de-software.toml>
 
 > Heads-up: `.zshrc` contains a few machine-specific paths (e.g. the gcloud
 > credentials path under `$HOME`). After copying, adjust those to your machine.
@@ -75,7 +79,8 @@ safe to drop on any machine.
 ## Files
 
 - `.zshrc` — zsh + oh-my-zsh + powerlevel10k config
-- `AGENTS.md` — project-agnostic engineering rules for AI coding agents
+- `AGENTS.md` — global preferences shared by every Codex conversation
+- `.codex/agents/ingeniero-de-software.toml` — focused Codex profile containing the engineering workflow, Git, security, test and review rules
 - `profiles/` — VS Code extension lists per profile (see [VS Code profiles](#vs-code-profiles))
 - `zsh-plugins.txt` — inventory of the oh-my-zsh plugins enabled in `.zshrc` (see [oh-my-zsh plugins](#oh-my-zsh-plugins))
 - `README.md` — this file
