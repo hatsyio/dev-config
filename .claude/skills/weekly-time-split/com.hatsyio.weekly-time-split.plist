@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.hatsyio.weekly-time-split</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/joseppascualbadia/.claude/skills/weekly-time-split/scripts/run-weekly.sh</string>
+  </array>
+
+  <!-- Friday 15:00 local. Weekday 5 = Friday. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>5</integer>
+    <key>Hour</key><integer>15</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- If the Mac sleeps through 15:00, launchd fires the job on wake.
+       If it is powered off, that Friday is skipped: run the skill by hand. -->
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/joseppascualbadia/Workspace</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/joseppascualbadia/Library/Logs/weekly-time-split/launchd.out</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/joseppascualbadia/Library/Logs/weekly-time-split/launchd.err</string>
+</dict>
+</plist>
