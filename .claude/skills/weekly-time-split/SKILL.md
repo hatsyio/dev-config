@@ -51,7 +51,7 @@ One row per repo. Meetings and coordination that belong to no repo get their own
 Answer in chat, in Spanish, in this order:
 
 1. **One line on the calendar**: which meetings counted, which were dropped and why.
-2. **The table**: repo rows × day columns, with a total column and, for a full week, a percentage column. Day columns must sum to their target; the grand total must equal the week target. Verify this arithmetic before printing.
+2. **The table**: build it with `scripts/split-table.py` and print its output unchanged. Pass one row per repo and day with the hours you attributed; the script gives the remainder of each day to **Sin traza**, adds the total and percentage columns, and fails if a day is over its target.
 3. **A paragraph per day**, naming the concrete evidence with timestamps — commits and their hours, review approvals, the Slack conversation that carried the afternoon. This is what lets Josep correct a number he disagrees with.
 4. **Findings**: `[should fix]` for every gap where hours rest on inference, `[question]` for attribution he has to decide.
 5. **A running total** when the week is partial.
