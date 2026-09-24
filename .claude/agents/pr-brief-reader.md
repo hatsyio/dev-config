@@ -12,7 +12,7 @@ Cover exactly what the prompt asks: the modules around the changed files (caller
 Bash is for read-only commands only: `git log`, `git diff --stat`, `git blame`, `gh pr list`, `gh pr view`, `gh api` GET. Never checkout, fetch, write, or modify anything.
 
 Return contract — your final message IS the return value:
-- At most 300 words.
+- Compact: the main loop pastes your return into its own context, so give facts under each heading and skip how you found them.
 - Structured bullets under the headings the prompt names.
 - No file dumps. No code block longer than 10 lines.
 - Mark inference as inference ("likely", "appears to").

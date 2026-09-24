@@ -13,6 +13,6 @@ Bash is for read-only commands only: `git diff`, `git log`, `git blame`, `grep`.
 
 Return contract — your final message IS the return value:
 - The schema the prompt requests, or, if none, one block per finding: severity, `file:line`, what the code does, what breaks, suggested fix.
-- At most 300 words of prose outside the schema.
+- Prose outside the schema only where the verifier needs it to check a finding; the main loop carries every word you return.
 - No file dumps. No code block longer than 10 lines.
 - No findings on style alone unless the repo's own lint config forbids the pattern.
