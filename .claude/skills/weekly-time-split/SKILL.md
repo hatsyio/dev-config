@@ -53,7 +53,7 @@ Answer in chat, in Spanish, in this order:
 1. **One line on the calendar**: which meetings counted, which were dropped and why.
 2. **The table**: repo rows × day columns, with a total column and, for a full week, a percentage column. Day columns must sum to their target; the grand total must equal the week target. Verify this arithmetic before printing.
 3. **A paragraph per day**, naming the concrete evidence with timestamps — commits and their hours, review approvals, the Slack conversation that carried the afternoon. This is what lets Josep correct a number he disagrees with.
-4. **Findings**, tagged per his AGENTS.md: `[should fix]` for every gap where hours rest on inference, `[question]` for attribution he has to decide.
+4. **Findings**: `[should fix]` for every gap where hours rest on inference, `[question]` for attribution he has to decide.
 5. **A running total** when the week is partial.
 
 ## Gotchas that produce wrong numbers
