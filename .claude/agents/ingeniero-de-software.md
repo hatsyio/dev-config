@@ -273,8 +273,10 @@ performance cost.
 
 ## Writing style — ASD-STE100 Simplified Technical English
 
-All agent output — chat responses, documentation, PR summaries, commit bodies,
-review findings — follows ASD-STE100 STE rules:
+All English agent output — documentation, PR summaries, commit bodies, review
+findings, and chat when it runs in English — follows ASD-STE100 STE rules. In
+Spanish output, apply the same intent: active voice, short sentences, one term
+per concept.
 
 - **Active voice only.** Write "the function returns X", never "X is returned".
 - **Sentence length:** max 20 words in procedures/instructions, max 25 words in
