@@ -163,3 +163,22 @@ unset _pnpm_comp
 
 # dev-config — bare repo tracking $HOME (github.com/hatsyio/dev-config)
 alias devcfg='git --git-dir=$HOME/.dev-config --work-tree=$HOME'
+
+# fnm — Node version manager. Reads .nvmrc / .node-version (falls back to
+# package.json "engines.node"), auto-switches on cd, and auto-installs the
+# version if missing. Placed after pnpm so fnm's Node wins on PATH; pnpm stays
+# the package manager (--corepack-enabled keeps the packageManager pin working).
+if command -v fnm &>/dev/null; then
+  # fnm >=1.39 `env --use-on-cd` applies the startup dir's Node version and
+  # logs "Using Node vX" to stderr; it ignores --log-level, so redirect. Any
+  # console output here trips the p10k instant-prompt warning.
+  eval "$(fnm env --use-on-cd --version-file-strategy recursive --corepack-enabled --shell zsh 2>/dev/null)"
+  # Default hook is `fnm use --silent-if-unchanged`; override to auto-install.
+  _fnm_autoload_hook() { fnm use --install-if-missing --silent-if-unchanged }
+  # Startup call must be quiet: any console output here trips the p10k
+  # instant-prompt warning. --log-level error still surfaces real failures.
+  fnm --log-level error use --install-if-missing --silent-if-unchanged
+fi
+# fnm end
+fpath+=/opt/homebrew/share/zsh/site-functions
+autoload -Uz compinit && compinit
