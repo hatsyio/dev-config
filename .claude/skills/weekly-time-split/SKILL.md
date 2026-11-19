@@ -65,6 +65,7 @@ Answer in chat, in Spanish, in this order:
 | `git log --all` without an author filter | Other people's merge commits land on his branches and look like his work. |
 | `for x in $var` in zsh | zsh does not word-split unquoted variables. Use `printf '%s\n' … | while read`. |
 | A quiet day in the traces | Means the traces missed it, not that he did nothing. Meetings, browser review and Cursor leave no trace here. |
+| Script calls under launchd | Write the JSON for `split-table.py` with the Write tool to `~/Library/Logs/weekly-time-split/split-input.json`, then run `python3 ~/.claude/skills/weekly-time-split/scripts/split-table.py < ~/Library/Logs/weekly-time-split/split-input.json`. A heredoc carrying JSON is blocked by the Bash safety filter, and writes to `/tmp`, `for` loops and `{…}` expansions need approval that a headless run cannot give, so the table falls back to hand arithmetic. |
 | Slack tool name under launchd | A headless run resolves Slack as the claude.ai connector, not the plugin: `mcp__claude_ai_Slack__slack_search_public_and_private`. The plugin name is denied there, and without Slack the residual roughly doubles. |
 
 ## Identities
