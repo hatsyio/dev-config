@@ -121,22 +121,6 @@ Cross-check the §5 ledger first: a prior posted finding whose code moved and wh
 
 **Systemic reveals go to a ticket, not back to the colleague.** If a suppressed re-open exposes a genuine recurring or systemic issue, do not re-ask on this PR. Route the long-term fix to a repo-level gap → follow-up ticket via stage 4/5, and never post a blocking comment on the colleague's PR for it. The colleague's fix stands; the class-level fix is separate work.
 
-**Red flags — you are about to re-litigate a settled concern:**
-- "The fix works, but I'd specify it more precisely now."
-- "This is fine, but a different strategy would be cleaner."
-- "It's technically addressed, but while we're here…"
-- "I agreed this shape last round, but…"
-
-All of these mean: **the concern is settled. Suppress it as a restraint note unless it is a blocker.**
-
-| Re-review rationalization | Reality |
-|---|---|
-| "The fix is fine but under-specified" | Under-specification you did not raise last round is your change of mind, not their defect. Suppress. |
-| "A different strategy is cleaner now" | You accepted the strategy when you agreed the fix. Re-opening it burns the colleague's time. Suppress. |
-| "It's a small extra tweak on the same line" | Small + already-addressed is still re-litigation. Suppress unless blocker. |
-| "It's a recurring pattern, I should flag it" | Flag the pattern as a follow-up ticket, not as a repeat change-request on this PR. |
-| "I'm just being thorough" | Thorough is not endless. Honest review does not move its own goalposts across passes. |
-
 ## Stage 4 — Systemic-fix escalation
 
 For each verified defect finding, ask: **what prevents this class of issue from recurring?** Attach a `systemic_fix` when one exists. Two kinds:
