@@ -85,6 +85,15 @@ safe to drop on any machine.
 - `zsh-plugins.txt` — inventory of the oh-my-zsh plugins enabled in `.zshrc` (see [oh-my-zsh plugins](#oh-my-zsh-plugins))
 - `README.md` — this file
 
+## Language policy
+
+`AGENTS.md` keeps replies in the language that starts the conversation and requires
+brief writing corrections before the agent fulfills each request. A language switch
+requires an explicit request. Agent-authored project files and development artifacts
+use English, with explicit exceptions for requested localization and preserved source
+material. The engineering profile defers to this global policy for chat language and
+writing feedback.
+
 ## VS Code profiles
 
 Extensions are tracked as `extensions.json` files inside each profile
