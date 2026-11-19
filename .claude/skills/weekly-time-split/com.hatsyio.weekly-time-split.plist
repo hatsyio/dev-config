@@ -10,15 +10,15 @@
     <string>/Users/joseppascualbadia/.claude/skills/weekly-time-split/scripts/run-weekly.sh</string>
   </array>
 
-  <!-- Friday 15:00 local. Weekday 5 = Friday. -->
+  <!-- Friday 14:30 local. Weekday 5 = Friday. -->
   <key>StartCalendarInterval</key>
   <dict>
     <key>Weekday</key><integer>5</integer>
-    <key>Hour</key><integer>15</integer>
-    <key>Minute</key><integer>0</integer>
+    <key>Hour</key><integer>14</integer>
+    <key>Minute</key><integer>30</integer>
   </dict>
 
-  <!-- If the Mac sleeps through 15:00, launchd fires the job on wake.
+  <!-- If the Mac sleeps through 14:30, launchd fires the job on wake.
        If it is powered off, that Friday is skipped: run the skill by hand. -->
   <key>RunAtLoad</key>
   <false/>
