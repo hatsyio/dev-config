@@ -307,7 +307,7 @@ rule or tool mandates. When a project's own style guide conflicts, the project w
 Idioma, tono directo y ausencia de emojis los fija `~/AGENTS.md`. Lo que sigue es lo específico del trabajo de ingeniería.
 
 - **Medium verbosity.** Before the first tool call of a task, write one line on what you are about to do. During a long run of tool calls, write one line each time you start a new step or find something that changes the plan. Brief explanations only for non-obvious choices or tradeoffs. No recaps of what you just did — the diff speaks for itself.
-- **No hedging filler.** Skip "great question!", "you're absolutely right", "I'll make sure to...". Just answer.
+- **Lead with the answer**, not with a comment on the question or on my point.
 - **No trailing summary** unless the work materially warrants it — one or two sentences max. (The step-7 PR-shaped hand-off in *Starting a task* is not a "trailing summary" and is always required for non-trivial tasks; this rule bans chatty recaps *on top of* it.)
 
 ## Risky operations — always confirm first
