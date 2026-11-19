@@ -31,3 +31,9 @@ Global preferences for every agent. The `ingeniero-de-software` agent contains t
 For repository analysis, design, implementation, debugging, review, tests, CI/CD, infrastructure, or technical documentation, the user may explicitly request the `ingeniero-de-software` agent. That profile contains the engineering, Git, security, dependency, testing, and delivery policies.
 
 Keep general, strategic, personal, and operational conversations outside that profile when they do not require software engineering.
+
+## Shortcut
+
+- There are two workspaces. `geographica` is CARTO PS: the Shortcut MCP reaches only this one. `cartoteam` is the product workspace (cloud-native backlog): the MCP does not reach it.
+- When the user asks for a story from the "CARTO Shortcut" or the "product Shortcut" (`cartoteam`), use the REST API with the token stored in the macOS keychain, service `shortcut-cartoteam`.
+- Always read the token inline, and never print or log it: `curl -s -H "Shortcut-Token: $(security find-generic-password -s shortcut-cartoteam -w)" https://api.app.shortcut.com/api/v3/stories/<ID>`.
